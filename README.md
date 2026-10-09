@@ -28,4 +28,21 @@ moex-analytics-demo/
 ├── output/                # Директория для сохранения результатов
 ├── main.py                # Точка входа
 ├── requirements.txt       # Зависимости проекта
-└── README.md
+└── README.md 
+```
+
+## 🚀 Как запустить
+ 1. Клонируйте репозиторий:
+  -  git clone https://github.com/IlyaNaumenko7/moex-analytics-demo.git
+  -  cd moex-analytics-demo
+ 2. Создайте и активируйте виртуальное окружение:
+  -  python -m venv venv
+  -  source venv/bin/activate  # Для Windows: venv\Scripts\activate 
+ 3. Установите зависимости:
+  -  pip install -r requirements.txt
+ 4. Запустите основной скрипт:
+  -  python main.py
+ 5. Готовый график будет сохранён в папку output/.
+
+## 👨‍💻 Об авторе
+Fullstack-разработчик (Python / Java). Специализируюсь на создании надёжных backend-решений, работе с временными рядами и автоматизации аналитических процессов.
