@@ -11,3 +11,20 @@ ENV/
 *.log
 output/*.png
 .DS_Store
+
+.venv/
+venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+.mypy_cache/
+.coverage
+htmlcov/
+output/
+
+# PyCharm
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db
