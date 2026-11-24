@@ -1,75 +1,91 @@
-"""Модуль для загрузки исторических данных с биржи."""
+"""Загрузка исторических OHLCV-данных с внешнего источника (Yahoo Finance).
+
+Слой отвечает только за получение и нормализацию данных: расчёты и визуализация
+живут в других модулях и от источника не зависят.
+"""
+
+from __future__ import annotations
 
 import pandas as pd
 import yfinance as yf
 
+from src.data_source import OHLCV_COLUMNS
+
+ALLOWED_INTERVALS = ("1d", "1wk", "1mo")
+
+_COLUMN_MAP = {
+    "Date": "date",
+    "Open": "open",
+    "High": "high",
+    "Low": "low",
+    "Close": "close",
+    "Volume": "volume",
+}
+
 
 class MOEXDataLoader:
-    """
-    Загрузчик исторических OHLCV-данных.
+    """Загрузчик исторических OHLCV-данных через Yahoo Finance."""
 
-    По умолчанию использует Yahoo Finance (формат тикера 'SBER.ME' для MOEX).
-    Легко заменяется на любой другой источник — интерфейс класса сохраняется.
-    """
-
-    def __init__(self, ticker: str):
+    def __init__(self, ticker: str, auto_suffix: bool = True) -> None:
         """
         Args:
-            ticker: Тикер инструмента.
-                    Для акций MOEX используется формат 'TICKER.ME' (например, 'SBER.ME').
-                    Для US акций — просто 'AAPL', 'MSFT' и т.д.
-        """
-        # Если пользователь передал просто 'SBER', добавляем '.ME'
-        if "." not in ticker:
-            self.ticker = f"{ticker.upper()}.ME"
-        else:
-            self.ticker = ticker.upper()
+            ticker: Тикер инструмента, например 'SBER' или 'AAPL'.
+            auto_suffix: Если True и в тикере нет точки, добавляется '.ME'
+                (рынок MOEX): 'SBER' -> 'SBER.ME'. Для других рынков передавайте
+                тикер с auto_suffix=False, чтобы он остался без изменений.
 
-    def get_history(
-        self,
-        start_date: str,
-        end_date: str,
-        interval: str = "1d"
-    ) -> pd.DataFrame:
+        Raises:
+            ValueError: Если тикер пустой.
         """
-        Загружает исторические OHLCV-данные.
+        normalized = ticker.strip().upper()
+        if not normalized:
+            raise ValueError("ticker не может быть пустым")
+
+        if auto_suffix and "." not in normalized:
+            normalized = f"{normalized}.ME"
+
+        self.ticker = normalized
+
+    def get_history(self, start_date: str, end_date: str, interval: str = "1d") -> pd.DataFrame:
+        """Загружает исторические OHLCV-данные и приводит их к единому контракту.
 
         Args:
             start_date: Начальная дата в формате 'YYYY-MM-DD'.
             end_date: Конечная дата в формате 'YYYY-MM-DD'.
-            interval: Интервал свечей ('1d', '1wk', '1mo').
+            interval: Интервал свечей: '1d', '1wk' или '1mo'.
 
         Returns:
-            DataFrame с колонками: date, open, high, low, close, volume.
+            DataFrame с колонками date, open, high, low, close, volume,
+            отсортированный по дате, без часового пояса.
 
         Raises:
-            ValueError: Если данные пусты или произошла ошибка.
+            ValueError: Некорректный интервал, пустой ответ, неполный набор
+                колонок или ошибка внешнего источника.
         """
+        if interval not in ALLOWED_INTERVALS:
+            raise ValueError(
+                f"Неподдерживаемый интервал '{interval}'. "
+                f"Допустимые значения: {ALLOWED_INTERVALS}"
+            )
+
+        # Оборачиваем только сетевой вызов — свои ошибки не перехватываем
         try:
             stock = yf.Ticker(self.ticker)
-            df = stock.history(start=start_date, end=end_date, interval=interval)
+            raw = stock.history(start=start_date, end=end_date, interval=interval)
+        except Exception as exc:
+            raise ValueError(f"Ошибка загрузки данных для {self.ticker}: {exc}") from exc
 
-            if df.empty:
-                raise ValueError(f"Нет данных для тикера {self.ticker}")
+        if raw.empty:
+            raise ValueError(f"Нет данных для тикера {self.ticker}")
 
-            # Приводим к единому формату
-            df = df.reset_index()
-            df = df.rename(columns={
-                "Date": "date",
-                "Open": "open",
-                "High": "high",
-                "Low": "low",
-                "Close": "close",
-                "Volume": "volume",
-            })
+        df = raw.reset_index().rename(columns=_COLUMN_MAP)
 
-            # Убираем часовой пояс для единообразия
-            df["date"] = pd.to_datetime(df["date"]).dt.tz_localize(None)
+        missing = [column for column in OHLCV_COLUMNS if column not in df.columns]
+        if missing:
+            raise ValueError(f"Источник вернул неполный набор колонок, отсутствуют: {missing}")
 
-            df = df[["date", "open", "high", "low", "close", "volume"]]
-            df = df.sort_values("date").reset_index(drop=True)
+        # Устойчиво и к tz-aware, и к tz-naive датам
+        dates = pd.to_datetime(df["date"])
+        df["date"] = dates.dt.tz_localize(None) if dates.dt.tz is not None else dates
 
-            return df
-
-        except Exception as e:
-            raise ValueError(f"Ошибка загрузки данных для {self.ticker}: {e}")
+        return df[OHLCV_COLUMNS].sort_values("date").reset_index(drop=True)
