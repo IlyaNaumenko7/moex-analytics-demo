@@ -1,4 +1,5 @@
 """Проверка ключевого архитектурного решения: демо не зависит от внешних API."""
+
 from __future__ import annotations
 
 import runpy

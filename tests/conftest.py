@@ -1,4 +1,5 @@
 """Общие фикстуры: корень проекта на sys.path и headless-backend для matplotlib."""
+
 from __future__ import annotations
 
 import os

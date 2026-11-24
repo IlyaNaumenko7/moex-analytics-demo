@@ -1,4 +1,5 @@
 """Архитектурные проверки: слои разделены, бизнес-логика не знает о сети."""
+
 from __future__ import annotations
 
 import ast
@@ -24,9 +25,7 @@ def _imported_roots(path: Path) -> set[str]:
 
 
 @pytest.mark.parametrize("module", PURE_LAYERS)
-def test_business_logic_has_no_network_dependencies(
-    project_root: Path, module: str
-) -> None:
+def test_business_logic_has_no_network_dependencies(project_root: Path, module: str) -> None:
     path = project_root / "src" / module
     assert path.exists(), f"Ожидался модуль {path}"
     leaked = _imported_roots(path) & NETWORK_MODULES

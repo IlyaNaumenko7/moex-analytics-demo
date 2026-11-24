@@ -1,4 +1,5 @@
 """Smoke-тест: точка входа отрабатывает и сохраняет график."""
+
 from __future__ import annotations
 
 import subprocess
@@ -18,15 +19,13 @@ def test_main_runs_and_produces_chart(project_root: Path) -> None:
         timeout=180,
     )
 
-    assert result.returncode == 0, (
-        f"main.py завершился с ошибкой:\n{result.stdout}\n{result.stderr}"
-    )
+    assert (
+        result.returncode == 0
+    ), f"main.py завершился с ошибкой:\n{result.stdout}\n{result.stderr}"
 
     charts = [
         p
         for p in project_root.rglob("*.png")
-        if p.stat().st_mtime >= start - 1
-        and "venv" not in p.parts
-        and ".venv" not in p.parts
+        if p.stat().st_mtime >= start - 1 and "venv" not in p.parts and ".venv" not in p.parts
     ]
     assert charts, "После запуска не найдено ни одного сохранённого графика (.png)"
