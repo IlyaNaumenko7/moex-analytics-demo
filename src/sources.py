@@ -11,7 +11,7 @@ from pathlib import Path
 import pandas as pd
 
 from src.data_loader import MOEXDataLoader
-from src.data_source import OHLCV_COLUMNS, OHLCVDataSource
+from src.data_source import OHLCV_COLUMNS
 from src.mock_data import generate_mock_ohlcv
 
 
