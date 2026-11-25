@@ -6,10 +6,12 @@ ENV PYTHONUNBUFFERED=1 \
 
 WORKDIR /app
 
+# Сначала копируем зависимости и устанавливаем их (это кешируется)
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-COPY src .
+# Теперь копируем весь проект (main.py, src/ и т.д.), исключая то, что в .dockerignore
+COPY . .
 
 RUN mkdir -p output \
     && useradd --create-home appuser \

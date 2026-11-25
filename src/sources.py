@@ -3,6 +3,7 @@
 Этот модуль реализует паттерн "Стратегия": бизнес-логика зависит только от
 интерфейса (Protocol), а конкретная реализация выбирается в одном месте (фабрике).
 """
+
 from __future__ import annotations
 
 from pathlib import Path
@@ -29,9 +30,7 @@ class MockSource:
 class YahooSource:
     """Реальные исторические данные через Yahoo Finance."""
 
-    def __init__(
-        self, ticker: str, start_date: str, end_date: str, interval: str = "1d"
-    ) -> None:
+    def __init__(self, ticker: str, start_date: str, end_date: str, interval: str = "1d") -> None:
         self._loader = MOEXDataLoader(ticker)
         self._start_date = start_date
         self._end_date = end_date
@@ -75,8 +74,4 @@ class CsvSource:
         # Нормализуем даты и сортируем (чтобы поведение совпадало с YahooSource)
         df["date"] = pd.to_datetime(df["date"])
 
-        return (
-            df[OHLCV_COLUMNS]
-            .sort_values("date")
-            .reset_index(drop=True)
-        )
+        return df[OHLCV_COLUMNS].sort_values("date").reset_index(drop=True)
